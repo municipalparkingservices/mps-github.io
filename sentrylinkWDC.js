@@ -8,7 +8,6 @@
       console.log("init: ", tableau.phase, tableau.username, tableau.password);
       if (tableau.phase == tableau.phaseEnum.gatherDataPhase) {
           var dateObj = JSON.parse(tableau.connectionData)
-          console.log("init: gatherData ", dateObj);
           // Run API tokens to log in and get token for the rest of the commands
           var url = "https://sentrylink.mpspark.com/api/v1/tokens.json"
           var xhr = new XMLHttpRequest();
@@ -17,8 +16,6 @@
           xhr.setRequestHeader("Content-Type", "application/json");
 
           var data = '{"user" : {"email":"' + tableau.username + '" , "password":"' + tableau.password + '" }}';
-
-          console.log("init: data ", data);
 
           xhr.send(data);
 
@@ -70,6 +67,10 @@ myConnector.getSchema = function (schemaCallback) {
     var spots_cols = [{
         id: "name",
         alias: "name",
+        dataType: tableau.dataTypeEnum.string
+    }, {
+        id: "full_name",
+        alias: "full_name",
         dataType: tableau.dataTypeEnum.string
     }, {
         id: "legacy_spot_id",
@@ -139,7 +140,7 @@ myConnector.getSchema = function (schemaCallback) {
         id: "maintenance_mode",
         alias: "maintenance_mode",
         dataType: tableau.dataTypeEnum.bool
-    } ];
+    }  ];
 
     var metersTable = {
         id: "meters",
@@ -147,6 +148,41 @@ myConnector.getSchema = function (schemaCallback) {
         columns: meters_cols
     };
 
+    var current_sessions_cols = [{
+        id: "id",
+        alias: "id",
+        dataType: tableau.dataTypeEnum.int
+    }, {
+        id: "name",
+        alias: "name",
+        dataType: tableau.dataTypeEnum.string
+    }, {
+        id: "estimated_time_remaining",
+        alias: "estimated_time_remaining",
+        dataType: tableau.dataTypeEnum.int
+    }, {
+        id: "free_time_remaining",
+        alias: "free_time_remaining",
+        dataType: tableau.dataTypeEnum.int
+    }, {
+        id: "violations",
+        alias: "violations",
+        dataType: tableau.dataTypeEnum.int
+    }, {
+        id: "payments",
+        alias: "payments",
+        dataType: tableau.dataTypeEnum.int
+    }, {
+        id: "park_timestamp",
+        alias: "park_timestamp",
+        dataType: tableau.dataTypeEnum.string
+    } ];
+
+    var currentSessionsTable = {
+        id: "current_sessions",
+        alias: "current_sessions",
+        columns: current_sessions_cols
+    };
 
     var vio_cols = [{
         id: "friendly_name",
@@ -436,7 +472,7 @@ myConnector.getSchema = function (schemaCallback) {
         columns: violation_quick_stats_cols
     };
 
-    schemaCallback([vacancyTable, tableSchema, hourlySessionsTable, dailySessionsTable, dailyRevenueTable, dailyRevenueCardTable, dailyRevenueCoinTable, dailyViolationIssuedRevenueTable, violation_quick_statsTable, coinJarStatusReportTable, spotsTable, metersTable, vioTable]);
+    schemaCallback([currentSessionsTable, tableSchema, hourlySessionsTable, dailySessionsTable, dailyRevenueTable, dailyRevenueCardTable, dailyRevenueCoinTable, dailyViolationIssuedRevenueTable, violation_quick_statsTable, coinJarStatusReportTable, spotsTable, metersTable, vioTable]);
 };
 
 myConnector.getData = function(table, doneCallback) {
@@ -544,13 +580,13 @@ myConnector.getData = function(table, doneCallback) {
         for (var i = 0, groups_len = meter_groups.length; i < groups_len; i++) {
             var meters = meter_groups[i].meters;
             for (var j = 0, meters_len = meters.length; j < meters_len; j++) {
+                if(meters[j].maintenance_mode == true) {
+                    maintenance_mode += 1;
+                }
                 var spots = meters[j].spots;
                 for (var k = 0, spots_len = spots.length; k < spots_len; k++) {
                     if (spots[k].available == true) {
                         total_available += 1;
-                    }
-                    if (spots[k].maintenance_mode == true) {
-                        maintenance_mode += 1;
                     }
                     total_spots += 1;
                 }
@@ -825,11 +861,66 @@ myConnector.getData = function(table, doneCallback) {
                 for (var k = 0, spots_len = spots.length; k < spots_len; k++) {
                     tableData.push({
                     "name": spots[k].name,
+                    "full_name": spots[k].name + "@" + dateObj.submuni,
                     "legacy_spot_id": spots[k].legacy_spot_id,
                     "latitude": spots[k].latitude,
                     "longitude": spots[k].longitude,
                     "available": spots[k].available,
                     "device_id": spots[k].id,
+                    });
+                }
+            }
+        }
+    }
+
+    if (table.tableInfo.id == "current_sessions") {
+        var dateObj = JSON.parse(tableau.connectionData)
+        var url = "https://" + dateObj.submuni + ".mpspark.com/api/v1/meters.json";
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", url, false);
+
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.setRequestHeader("X-User-Token", tableau.password);
+        xhr.setRequestHeader("X-User-Email", tableau.username);
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                console.log(xhr.status);
+                //console.log(xhr.responseText);
+            }
+        };
+
+        xhr.send();
+
+        var jsonResponse = JSON.parse(xhr.responseText);
+        var meter_groups = jsonResponse.meter_groups;
+        var tableData = [];
+        // Iterate over the JSON object
+        for (var i = 0, groups_len = meter_groups.length; i < groups_len; i++) {
+            var meters = meter_groups[i].meters;
+            for (var j = 0, meters_len = meters.length; j < meters_len; j++) {
+                url = "https://" + dateObj.submuni + ".mpspark.com/api/v1/meters/" + meters[j].id + "/parking_sessions.json";
+                console.log(url);
+                device_xhr = new XMLHttpRequest();
+                device_xhr.open("GET", url, false);
+                device_xhr.setRequestHeader("Content-Type", "application/json");
+                device_xhr.setRequestHeader("X-User-Token", tableau.password);
+                device_xhr.setRequestHeader("X-User-Email", tableau.username);
+                device_xhr.send(data);
+                var jsonResponse = JSON.parse(device_xhr.responseText);
+                var parking_sessions = jsonResponse.parking_sessions;
+                for (var z = 0, sessions_len = parking_sessions.length; z < sessions_len; z++) {
+                    var violations = parking_sessions[z].violations;
+                    var payments = parking_sessions[z].payments;
+                    tableData.push({
+                    "id": parking_sessions[z].device_id,
+                    "name": parking_sessions[z].spot_name,
+                    "estimated_time_remaining": parking_sessions[z].estimated_time_remaining,
+                    "free_time_remaining": parking_sessions[z].free_time_remaining,
+                    "violations": violations.length,
+                    "payments": payments.length,
+                    "park_timestamp": parking_sessions[z].park_timestamp,
                     });
                 }
             }
@@ -1178,7 +1269,6 @@ $(document).ready(function () {
         xhr.setRequestHeader("Content-Type", "application/json");
 
         var data = '{"user" : {"email":"' + tableau.username + '" , "password":"' + tableau.password + '" }}';
-        console.log("ready: data ", data);
 
         xhr.send(data);
 
