@@ -472,7 +472,7 @@ myConnector.getSchema = function (schemaCallback) {
         columns: violation_quick_stats_cols
     };
 
-    schemaCallback([currentSessionsTable, tableSchema, hourlySessionsTable, dailySessionsTable, dailyRevenueTable, dailyRevenueCardTable, dailyRevenueCoinTable, dailyViolationIssuedRevenueTable, violation_quick_statsTable, coinJarStatusReportTable, spotsTable, metersTable, vioTable]);
+    schemaCallback([vacancyTable, currentSessionsTable, tableSchema, hourlySessionsTable, dailySessionsTable, dailyRevenueTable, dailyRevenueCardTable, dailyRevenueCoinTable, dailyViolationIssuedRevenueTable, violation_quick_statsTable, coinJarStatusReportTable, spotsTable, metersTable, vioTable]);
 };
 
 myConnector.getData = function(table, doneCallback) {
