@@ -22,6 +22,7 @@
           var jsonResponse = JSON.parse(xhr.responseText);
 
           tableau.password = jsonResponse.token;
+          console.log("init: Token password obtained");
           //tableau.password = "e6xRKuHcazUBWPNmX4MD";
       }
       initCallback();
