@@ -29,6 +29,46 @@
   }
 
 myConnector.getSchema = function (schemaCallback) {
+    var kiosks_cols = [{
+        id: "name",
+        alias: "name",
+        dataType: tableau.dataTypeEnum.string
+    }, {
+        id: "latitude",
+        alias: "latitude",
+        dataType: tableau.dataTypeEnum.float
+    }, {
+        id: "longitude",
+        alias: "longitude",
+        dataType: tableau.dataTypeEnum.float
+    }, {
+        id: "address",
+        alias: "address",
+        dataType: tableau.dataTypeEnum.string
+    }, {
+        id: "city",
+        alias: "city",
+        dataType: tableau.dataTypeEnum.string
+    }, {
+        id: "state",
+        alias: "state",
+        dataType: tableau.dataTypeEnum.string
+    }, {
+        id: "spaces",
+        alias: "spaces",
+        dataType: tableau.dataTypeEnum.int
+    }, {
+        id: "available",
+        alias: "available",
+        dataType: tableau.dataTypeEnum.int
+    } ];
+
+    var kioskTable = {
+        id: "kiosks",
+        alias: "kiosks",
+        columns: kiosks_cols
+    };
+
     var vacancy_cols = [{
         id: "today_sessions",
         alias: "today_sessions",
@@ -473,7 +513,7 @@ myConnector.getSchema = function (schemaCallback) {
         columns: violation_quick_stats_cols
     };
 
-    schemaCallback([vacancyTable, currentSessionsTable, tableSchema, hourlySessionsTable, dailySessionsTable, dailyRevenueTable, dailyRevenueCardTable, dailyRevenueCoinTable, dailyViolationIssuedRevenueTable, violation_quick_statsTable, coinJarStatusReportTable, spotsTable, metersTable, vioTable]);
+    schemaCallback([kioskTable, vacancyTable, currentSessionsTable, tableSchema, hourlySessionsTable, dailySessionsTable, dailyRevenueTable, dailyRevenueCardTable, dailyRevenueCoinTable, dailyViolationIssuedRevenueTable, violation_quick_statsTable, coinJarStatusReportTable, spotsTable, metersTable, vioTable]);
 };
 
 myConnector.getData = function(table, doneCallback) {
@@ -646,6 +686,45 @@ myConnector.getData = function(table, doneCallback) {
             myDate.setDate(myDate.getDate() - 1);
         }
     }
+
+    if (table.tableInfo.id == "kiosks") {
+        var dateObj = JSON.parse(tableau.connectionData)
+        var url = "https://" + dateObj.submuni + ".mpspark.com/api/v1/kiosks.json";
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", url, false);
+
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.setRequestHeader("X-User-Token", tableau.password);
+        xhr.setRequestHeader("X-User-Email", tableau.username);
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                console.log(xhr.status);
+                //console.log(xhr.responseText);
+            }
+        };
+
+        xhr.send();
+
+        var jsonResponse = JSON.parse(xhr.responseText);
+        var lots = jsonResponse.open_parking_lots;
+        var tableData = [];
+        // Iterate over the JSON object
+        for (var i = 0, lots_len = lots.length; i < lots_len; i++) {
+            tableData.push({
+                "name": lots[i].name,
+                "latitude": lots[i].latitude,
+                "longitude": lots[i].longitude,
+                "address": lots[i].address_street_1,
+                "city": lots[i].city,
+                "state": lots[i].state,
+                "spaces": lots[i].spaces,
+                "available": lots[i].kiosks[0].spots_available,
+            });
+        }
+    }
+
     if (table.tableInfo.id == "hourly_parking_sessions") {
         var dateObj = JSON.parse(tableau.connectionData)
         var url = "https://" + dateObj.submuni + ".mpspark.com/api/v1/quickstat/hourly_parking_sessions.json";
@@ -902,13 +981,17 @@ myConnector.getData = function(table, doneCallback) {
             var meters = meter_groups[i].meters;
             for (var j = 0, meters_len = meters.length; j < meters_len; j++) {
                 url = "https://" + dateObj.submuni + ".mpspark.com/api/v1/meters/" + meters[j].id + "/parking_sessions.json";
-                console.log(url);
                 device_xhr = new XMLHttpRequest();
                 device_xhr.open("GET", url, false);
                 device_xhr.setRequestHeader("Content-Type", "application/json");
                 device_xhr.setRequestHeader("X-User-Token", tableau.password);
                 device_xhr.setRequestHeader("X-User-Email", tableau.username);
                 device_xhr.send(data);
+                device_xhr.onreadystatechange = function () {
+                    if (device_xhr.readyState === 4) {
+                        console.log("Parking session status ", device_xhr.status);
+                    }
+                }
                 var jsonResponse = JSON.parse(device_xhr.responseText);
                 var parking_sessions = jsonResponse.parking_sessions;
                 for (var z = 0, sessions_len = parking_sessions.length; z < sessions_len; z++) {
@@ -1287,6 +1370,11 @@ $(document).ready(function () {
                 console.log("ready: submuni ", submuni);
                 break;
             }
+            if (muni_id == "Premium, LA") {
+                submuni = "premiumneworleans";
+                console.log("ready: submuni ", submuni);
+                break;
+            }
         }
       
         if (tableau.password.length > 0 && isValidDate(startDate) && isValidDate(endDate)) {
@@ -1300,7 +1388,7 @@ $(document).ready(function () {
                 muni_id: muni_id,
                 submuni: submuni,
             };
-            console.log("ready: ", tableau.username, tableau.password);
+            console.log("ready: ", tableau.username, tableau.password, muni_id, submuni);
             tableau.connectionData = JSON.stringify(dateObj);
             tableau.connectionName = muni_id + " SentryLink Data";
             tableau.submit();
