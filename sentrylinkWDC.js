@@ -1291,7 +1291,7 @@ myConnector.getData = function(table, doneCallback) {
                 "coin_jar_last_update": payload[i].coin_jar_last_update,
                 "average_cash_out_percent_full": payload[i].average_cash_out_percent_full,
                 "average_cash_out_coin_count": payload[i].average_cash_out_coin_count,
-                "average_cash_out_value": payload[i].average_cash_out_value,
+                "average_cash_out_value": payload[i].average_cash_out_value/100.00,
                 "average_cash_out_jar_age_hours": payload[i].average_cash_out_jar_age_hours,
                 "num_cash_outs": payload[i].num_cash_outs,
                 "coin_vault_door_last_update": payload[i].coin_vault_door_last_update,
