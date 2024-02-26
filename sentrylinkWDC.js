@@ -23,7 +23,7 @@
 
           tableau.password = jsonResponse.token;
           console.log("init: Token password obtained");
-          //tableau.password = "e6xRKuHcazUBWPNmX4MD";
+          tableau.password = "Changeme2!";
       }
       initCallback();
   }
@@ -216,6 +216,10 @@ myConnector.getSchema = function (schemaCallback) {
     }, {
         id: "park_timestamp",
         alias: "park_timestamp",
+        dataType: tableau.dataTypeEnum.string
+    }, {
+        id: "camera_url",
+        alias: "camera_url",
         dataType: tableau.dataTypeEnum.string
     } ];
 
@@ -981,6 +985,7 @@ myConnector.getData = function(table, doneCallback) {
             var meters = meter_groups[i].meters;
             for (var j = 0, meters_len = meters.length; j < meters_len; j++) {
                 url = "https://" + dateObj.submuni + ".mpspark.com/api/v1/meters/" + meters[j].id + "/parking_sessions.json";
+                //console.log(url);
                 device_xhr = new XMLHttpRequest();
                 device_xhr.open("GET", url, false);
                 device_xhr.setRequestHeader("Content-Type", "application/json");
@@ -995,6 +1000,17 @@ myConnector.getData = function(table, doneCallback) {
                 var jsonResponse = JSON.parse(device_xhr.responseText);
                 var parking_sessions = jsonResponse.parking_sessions;
                 for (var z = 0, sessions_len = parking_sessions.length; z < sessions_len; z++) {
+                    url = "https://" + dateObj.submuni + ".mpspark.com/api/v1/snmp/device_mib/get_single_device.json?device_id=" + parking_sessions[z].device_id
+                    //console.log(url);
+                    mib_xhr = new XMLHttpRequest();
+                    mib_xhr.open("GET", url, false);
+                    mib_xhr.setRequestHeader("Content-Type", "application/json");
+                    mib_xhr.setRequestHeader("X-User-Token", tableau.password);
+                    mib_xhr.setRequestHeader("X-User-Email", tableau.username);
+                    mib_xhr.send(data);
+                    var jsonResponse = JSON.parse(mib_xhr.responseText);
+                    var device = jsonResponse.device;
+                    
                     var violations = parking_sessions[z].violations;
                     var payments = parking_sessions[z].payments;
                     tableData.push({
@@ -1005,6 +1021,7 @@ myConnector.getData = function(table, doneCallback) {
                     "violations": violations.length,
                     "payments": payments.length,
                     "park_timestamp": parking_sessions[z].park_timestamp,
+                    "camera_url": "http://" + device.ip_address + ":8082/all",
                     });
                 }
             }
