@@ -1076,6 +1076,9 @@ myConnector.getData = function(table, doneCallback) {
         var xhr = new XMLHttpRequest();
         xhr.open("POST", url, false);
 
+        xhr.setRequestHeader("Access-Control-Allow-Origin", "*");
+        xhr.setRequestHeader("Access-Control-Allow-Methods", "POST, GET, PUT");
+        xhr.setRequestHeader("Access-Control-Allow-Headers", "Content-Type");
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.setRequestHeader("X-User-Token", tableau.password);
         xhr.setRequestHeader("X-User-Email", tableau.username);
