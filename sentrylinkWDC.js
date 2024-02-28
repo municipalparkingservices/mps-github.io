@@ -23,7 +23,6 @@
 
           tableau.password = jsonResponse.token;
           console.log("init: Token password obtained");
-          tableau.password = "Changeme2!";
       }
       initCallback();
   }
