@@ -1070,7 +1070,7 @@ myConnector.getData = function(table, doneCallback) {
     }
     if (table.tableInfo.id == "daily_revenue") {
         var dateObj = JSON.parse(tableau.connectionData)
-        var url = "https://" + dateObj.submuni + ".mpspark.com/api/v1/quickstat/daily_revenue.json";
+        var url = "https://corsproxy.io/?https://" + dateObj.submuni + ".mpspark.com/api/v1/quickstat/daily_revenue.json";
         //var url = "https://hamtramckmi.mpspark.com/api/v1/quickstat/daily_revenue.json";
 
         var xhr = new XMLHttpRequest();
