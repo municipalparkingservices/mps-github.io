@@ -15,6 +15,7 @@
 
           xhr.setRequestHeader("Content-Type", "application/json");
 
+          console.log("init: use password to obtain token: ", tableau.password);
           var data = '{"user" : {"email":"' + tableau.username + '" , "password":"' + tableau.password + '" }}';
 
           xhr.send(data);
@@ -23,6 +24,11 @@
 
           tableau.password = jsonResponse.token;
           console.log("init: Token password obtained");
+          for (var key in obj) {
+              if (obj.hasOwnProperty(key)) {
+                  console.log("init: tableau object ", key);
+              }
+          }
       }
       initCallback();
   }
