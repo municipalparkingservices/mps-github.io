@@ -24,8 +24,8 @@
 
           tableau.password = jsonResponse.token;
           console.log("init: Token password obtained");
-          for (var key in obj) {
-              if (obj.hasOwnProperty(key)) {
+          for (var key in tableau) {
+              if (tableau.hasOwnProperty(key)) {
                   console.log("init: tableau object ", key);
               }
           }
