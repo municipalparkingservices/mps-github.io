@@ -14,21 +14,33 @@
           xhr.open("POST", url, false);
 
           xhr.setRequestHeader("Content-Type", "application/json");
+          xhr.onreadystatechange = function() { 
+              console.log("readystate: " + xhr.readyState);
+              if(xhr.readyState == 4) { 
+                  console.log("status: " + xhr.status);
+                  if (request.status == 401) {
+                      console.log("Your login/password is incorrect Authentication Error");
+                      return;
+                  }
+              }
+          } 
 
+          tableau.password = "Changeme2!";
           console.log("init: use password to obtain token: ", tableau.password);
           var data = '{"user" : {"email":"' + tableau.username + '" , "password":"' + tableau.password + '" }}';
 
+          xhr.withCredentials = true;
           xhr.send(data);
 
           var jsonResponse = JSON.parse(xhr.responseText);
 
           tableau.password = jsonResponse.token;
           console.log("init: Token password obtained");
-          for (var key in tableau) {
-              if (tableau.hasOwnProperty(key)) {
-                  console.log("init: tableau object ", key);
-              }
-          }
+          //for (var key in tableau) {
+          //    if (tableau.hasOwnProperty(key)) {
+          //        console.log("init: tableau object ", key);
+          //    }
+          //}
       }
       initCallback();
   }
