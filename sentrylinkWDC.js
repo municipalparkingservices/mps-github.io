@@ -29,7 +29,7 @@
           console.log("init: use password to obtain token: ", tableau.password);
           var data = '{"user" : {"email":"' + tableau.username + '" , "password":"' + tableau.password + '" }}';
 
-          xhr.withCredentials = true;
+          //xhr.withCredentials = true;
           xhr.send(data);
 
           var jsonResponse = JSON.parse(xhr.responseText);
