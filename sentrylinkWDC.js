@@ -18,7 +18,7 @@
               console.log("readystate: " + xhr.readyState);
               if(xhr.readyState == 4) { 
                   console.log("status: " + xhr.status);
-                  if (request.status == 401) {
+                  if (xhr.status == 401) {
                       console.log("Your login/password is incorrect Authentication Error");
                       return;
                   }
